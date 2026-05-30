@@ -77,4 +77,8 @@ module.exports = {
   createStockageRow,
   updateStockageRow,
   deleteStockageRow,
+  // clear all rows
+  clearAllStockageRows: async function () {
+    await pool.run('DELETE FROM stockage');
+  },
 };

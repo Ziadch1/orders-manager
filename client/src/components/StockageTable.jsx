@@ -1,4 +1,4 @@
-function StockageTable({ rows, onRowChange, onDeleteRow, onAddRow }) {
+function StockageTable({ rows, onRowChange, onDeleteRow, onAddRow, saveDelay, onSaveDelayChange, onClearAll }) {
   const columns = [
     { key: 'idProduit', label: 'ID Produit', editable: true, type: 'text', widthClass: 'medium-col' },
     { key: 'produit', label: 'Produit', editable: true, type: 'text', widthClass: 'large-col' },
@@ -39,9 +39,22 @@ function StockageTable({ rows, onRowChange, onDeleteRow, onAddRow }) {
             Add products and track stock, costs, profit, and remaining stock automatically.
           </p>
         </div>
-        <button className="button" type="button" onClick={onAddRow}>
-          Add Product
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <label style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <span className="muted" style={{ fontSize: '0.85rem' }}>Auto-save delay</span>
+            <select value={saveDelay} onChange={(e) => onSaveDelayChange(Number(e.target.value))}>
+              <option value={300}>300ms</option>
+              <option value={600}>600ms</option>
+              <option value={1000}>1000ms</option>
+            </select>
+          </label>
+          <button className="button" type="button" onClick={onAddRow}>
+            Add Product
+          </button>
+          <button className="button-secondary" type="button" onClick={onClearAll}>
+            Clear Stockage Data
+          </button>
+        </div>
       </div>
       <div className="table-shell storage-shell">
         <table className="stockage-table">
@@ -88,9 +101,20 @@ function StockageTable({ rows, onRowChange, onDeleteRow, onAddRow }) {
                     );
                   })}
                   <td>
-                    <button className="button-danger" type="button" onClick={() => onDeleteRow(rowIndex)}>
-                      Delete
-                    </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <button className="button-danger" type="button" onClick={() => onDeleteRow(rowIndex)}>
+                        Delete
+                      </button>
+                      <div className="save-status">
+                        {row.saving ? (
+                          <span style={{ color: '#2563eb' }}>Saving...</span>
+                        ) : row.saveError ? (
+                          <span style={{ color: '#dc2626' }}>Save error</span>
+                        ) : row.savedAt ? (
+                          <span style={{ color: '#16a34a' }}>Saved</span>
+                        ) : null}
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ))

@@ -76,10 +76,14 @@ function StockagePage() {
 
   const rowsWithTotals = useMemo(() => rows.map(computeRowTotals), [rows]);
   const saveTimersRef = useRef({});
+  const [saveDelay, setSaveDelay] = useState(600);
 
   const handleRowChange = (rowIndex, field, value) => {
+    // Optimistically update the UI and mark row as saving if it has an id
     setRows((currentRows) =>
-      currentRows.map((row, index) => (index === rowIndex ? { ...row, [field]: value } : row))
+      currentRows.map((row, index) =>
+        index === rowIndex ? { ...row, [field]: value, saving: row.id ? true : row.saving, saveError: null } : row
+      )
     );
 
     const currentRow = rows[rowIndex];
@@ -88,26 +92,37 @@ function StockagePage() {
 
     const updatedRow = { ...currentRow, [field]: value };
 
-    // Debounce save per row id
+    // Debounce save per row id using current saveDelay
     const timerKey = String(currentRow.id);
     if (saveTimersRef.current[timerKey]) {
       clearTimeout(saveTimersRef.current[timerKey]);
     }
     saveTimersRef.current[timerKey] = setTimeout(async () => {
       try {
-        await updateStockageRow(currentRow.id, updatedRow);
+        const saved = await updateStockageRow(currentRow.id, updatedRow);
+        // mark saved
+        setRows((currentRows) =>
+          currentRows.map((r) => (r.id === currentRow.id ? { ...r, ...saved, saving: false, saveError: null, savedAt: Date.now() } : r))
+        );
+        // clear savedAt after a short interval
+        setTimeout(() => {
+          setRows((currentRows) => currentRows.map((r) => (r.id === currentRow.id ? { ...r, savedAt: null } : r)));
+        }, 3000);
       } catch (err) {
         console.error('Unable to save stockage row update', err);
+        setRows((currentRows) =>
+          currentRows.map((r) => (r.id === currentRow.id ? { ...r, saving: false, saveError: 'Save failed' } : r))
+        );
       } finally {
         delete saveTimersRef.current[timerKey];
       }
-    }, 600);
+    }, saveDelay);
   };
 
   const handleAddRow = async () => {
     try {
       const createdRow = await createStockageRow(getEmptyRow());
-      setRows((currentRows) => [...currentRows, createdRow]);
+      setRows((currentRows) => [...currentRows, { ...createdRow, saving: false, saveError: null }]);
     } catch (err) {
       console.error('Unable to create new stockage row', err);
     }
@@ -128,6 +143,19 @@ function StockagePage() {
     }
   };
 
+  const handleClearAll = async () => {
+    if (!window.confirm('Are you sure you want to clear all stockage data?')) return;
+    try {
+      // call backend to clear
+      const res = await fetch('/api/stockage', { method: 'DELETE' });
+      if (!res.ok) throw new Error('Clear failed');
+      setRows([]);
+    } catch (err) {
+      console.error('Unable to clear stockage data', err);
+      alert('Failed to clear stockage data. See console for details.');
+    }
+  };
+
   return (
     <div>
       <StockageTable
@@ -135,6 +163,9 @@ function StockagePage() {
         onRowChange={handleRowChange}
         onDeleteRow={handleDeleteRow}
         onAddRow={handleAddRow}
+        saveDelay={saveDelay}
+        onSaveDelayChange={setSaveDelay}
+        onClearAll={handleClearAll}
       />
     </div>
   );

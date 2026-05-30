@@ -226,6 +226,16 @@ table {
   border-radius: 10px;
 }
 
+.save-status {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.controls select {
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
 .stockage-table .small-col {
   width: 90px;
 }

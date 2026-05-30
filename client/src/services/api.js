@@ -26,6 +26,31 @@ export async function getStats() {
   return response.data.stats;
 }
 
+export async function getStockageRows() {
+  const response = await api.get('/api/stockage');
+  return response.data.rows;
+}
+
+export async function createStockageRow(row) {
+  const response = await api.post('/api/stockage', row);
+  return response.data.row;
+}
+
+export async function updateStockageRow(id, row) {
+  const response = await api.put(`/api/stockage/${id}`, row);
+  return response.data.row;
+}
+
+export async function deleteStockageRow(id) {
+  const response = await api.delete(`/api/stockage/${id}`);
+  return response.data;
+}
+
+export async function clearStockage() {
+  const response = await api.delete('/api/stockage');
+  return response.data;
+}
+
 export async function updateOrderStatus(id, etat_commande) {
   const response = await api.patch(`/api/orders/${id}/status`, { etat_commande });
   return response.data.order;
