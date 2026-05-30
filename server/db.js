@@ -28,6 +28,23 @@ CREATE TABLE IF NOT EXISTS orders (
   dedupe_key TEXT UNIQUE
 );
 
+CREATE TABLE IF NOT EXISTS stockage (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id_produit TEXT,
+  produit TEXT,
+  categorie TEXT,
+  fournisseur TEXT,
+  date_achat TEXT,
+  qte_achetee REAL DEFAULT 0,
+  prix_achat_unit REAL DEFAULT 0,
+  cout_livraison REAL DEFAULT 0,
+  prix_vente REAL DEFAULT 0,
+  ads REAL DEFAULT 0,
+  stock_vendu REAL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE INDEX IF NOT EXISTS idx_orders_imported_at ON orders(imported_at);
 CREATE INDEX IF NOT EXISTS idx_orders_etat_commande ON orders(etat_commande);
 `;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   getStockageRows,
   createStockageRow,
@@ -75,25 +75,33 @@ function StockagePage() {
   };
 
   const rowsWithTotals = useMemo(() => rows.map(computeRowTotals), [rows]);
+  const saveTimersRef = useRef({});
 
-  const handleRowChange = async (rowIndex, field, value) => {
+  const handleRowChange = (rowIndex, field, value) => {
     setRows((currentRows) =>
-      currentRows.map((row, index) =>
-        index === rowIndex ? { ...row, [field]: value } : row
-      )
+      currentRows.map((row, index) => (index === rowIndex ? { ...row, [field]: value } : row))
     );
 
     const currentRow = rows[rowIndex];
-    if (!currentRow || !currentRow.id) {
-      return;
-    }
+    // If there is no DB id yet, do nothing (new rows are created via Add button)
+    if (!currentRow || !currentRow.id) return;
 
     const updatedRow = { ...currentRow, [field]: value };
-    try {
-      await updateStockageRow(currentRow.id, updatedRow);
-    } catch (err) {
-      console.error('Unable to save stockage row update', err);
+
+    // Debounce save per row id
+    const timerKey = String(currentRow.id);
+    if (saveTimersRef.current[timerKey]) {
+      clearTimeout(saveTimersRef.current[timerKey]);
     }
+    saveTimersRef.current[timerKey] = setTimeout(async () => {
+      try {
+        await updateStockageRow(currentRow.id, updatedRow);
+      } catch (err) {
+        console.error('Unable to save stockage row update', err);
+      } finally {
+        delete saveTimersRef.current[timerKey];
+      }
+    }, 600);
   };
 
   const handleAddRow = async () => {
