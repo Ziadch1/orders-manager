@@ -1,32 +1,29 @@
 import { useEffect, useMemo, useState } from 'react';
+import {
+  getStockageRows,
+  createStockageRow,
+  updateStockageRow,
+  deleteStockageRow,
+} from '../services/api.js';
 import StockageTable from '../components/StockageTable.jsx';
-
-const STORAGE_KEY = 'stockageData';
 
 function StockagePage() {
   const [rows, setRows] = useState([]);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const storedRows = JSON.parse(raw);
-        if (Array.isArray(storedRows)) {
-          setRows(storedRows);
+    async function loadRows() {
+      try {
+        const savedRows = await getStockageRows();
+        if (Array.isArray(savedRows)) {
+          setRows(savedRows);
         }
+      } catch (err) {
+        console.error('Unable to load stockage rows from backend', err);
       }
-    } catch (err) {
-      console.error('Unable to load stockage data from localStorage', err);
     }
-  }, []);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
-    } catch (err) {
-      console.error('Unable to save stockage data to localStorage', err);
-    }
-  }, [rows]);
+    loadRows();
+  }, []);
 
   const parseNumber = (value) => {
     const cleaned = String(value).replace(/,/g, '.').trim();
@@ -46,10 +43,6 @@ function StockagePage() {
     prixVente: '',
     ads: '',
     stockVendu: '',
-    costTotal: 0,
-    stockRestant: 0,
-    profit: 0,
-    restStockProfit: 0,
   });
 
   const computeRowTotals = (row) => {
@@ -62,8 +55,15 @@ function StockagePage() {
 
     const costTotal = qte * prixAchat;
     const stockRestant = qte - stockVendu;
-    const profit = stockVendu * (prixVente - prixAchat - coutLivraison) - ads;
-    const restStockProfit = stockRestant * (prixVente - prixAchat - coutLivraison);
+
+    // New profit formula:
+    // ((Stock vendu * Prix vente DH) - (Stock vendu * coût de livraison)) - (Coût stock total DH + ads)
+    const revenueAfterDelivery = stockVendu * prixVente - stockVendu * coutLivraison;
+    const profit = revenueAfterDelivery - (costTotal + ads);
+
+    // New rest stock profit formula:
+    // (Stock restant * Prix vente DH) - (Stock restant * coût de livraison)
+    const restStockProfit = stockRestant * prixVente - stockRestant * coutLivraison;
 
     return {
       ...row,
@@ -76,20 +76,48 @@ function StockagePage() {
 
   const rowsWithTotals = useMemo(() => rows.map(computeRowTotals), [rows]);
 
-  const handleRowChange = (rowIndex, field, value) => {
+  const handleRowChange = async (rowIndex, field, value) => {
     setRows((currentRows) =>
       currentRows.map((row, index) =>
         index === rowIndex ? { ...row, [field]: value } : row
       )
     );
+
+    const currentRow = rows[rowIndex];
+    if (!currentRow || !currentRow.id) {
+      return;
+    }
+
+    const updatedRow = { ...currentRow, [field]: value };
+    try {
+      await updateStockageRow(currentRow.id, updatedRow);
+    } catch (err) {
+      console.error('Unable to save stockage row update', err);
+    }
   };
 
-  const handleAddRow = () => {
-    setRows((currentRows) => [...currentRows, getEmptyRow()]);
+  const handleAddRow = async () => {
+    try {
+      const createdRow = await createStockageRow(getEmptyRow());
+      setRows((currentRows) => [...currentRows, createdRow]);
+    } catch (err) {
+      console.error('Unable to create new stockage row', err);
+    }
   };
 
-  const handleDeleteRow = (rowIndex) => {
-    setRows((currentRows) => currentRows.filter((_, index) => index !== rowIndex));
+  const handleDeleteRow = async (rowIndex) => {
+    const rowToDelete = rows[rowIndex];
+    if (!rowToDelete || !rowToDelete.id) {
+      setRows((currentRows) => currentRows.filter((_, index) => index !== rowIndex));
+      return;
+    }
+
+    try {
+      await deleteStockageRow(rowToDelete.id);
+      setRows((currentRows) => currentRows.filter((_, index) => index !== rowIndex));
+    } catch (err) {
+      console.error('Unable to delete stockage row', err);
+    }
   };
 
   return (
