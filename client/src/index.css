@@ -35,7 +35,8 @@ button {
 }
 
 .app-shell {
-  max-width: 1440px;
+  width: 95vw;
+  max-width: none;
   margin: 0 auto;
   padding: 24px;
 }
@@ -46,6 +47,32 @@ button {
   align-items: flex-start;
   gap: 20px;
   margin-bottom: 24px;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.tab-button {
+  border: none;
+  border-radius: 999px;
+  padding: 12px 20px;
+  background: #e2e8f0;
+  color: #111827;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.tab-button:hover {
+  transform: translateY(-1px);
+  background: #dbeafe;
+}
+
+.tab-button.active {
+  background: #2563eb;
+  color: white;
 }
 
 .page-title {
@@ -147,13 +174,76 @@ select:focus {
 }
 
 .table-shell {
+  width: 100%;
   overflow-x: auto;
+}
+
+.stockage-card {
+  width: 100%;
+}
+
+.stockage-shell {
+  width: 100%;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
   min-width: 900px;
+}
+
+.stockage-table {
+  width: 100%;
+  min-width: 1300px;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.stockage-table thead th {
+  background: #2563eb;
+  color: white;
+  text-align: center;
+  padding: 10px 8px;
+  font-size: 13px;
+  white-space: normal;
+}
+
+.stockage-table td,
+.stockage-table th {
+  min-width: 80px;
+}
+
+.stockage-table td {
+  padding: 8px 6px;
+}
+
+.stockage-table input {
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 6px 8px;
+  font-size: 13px;
+  border-radius: 10px;
+}
+
+.stockage-table .small-col {
+  width: 90px;
+}
+
+.stockage-table .date-col {
+  width: 130px;
+}
+
+.stockage-table .medium-col {
+  width: 110px;
+}
+
+.stockage-table .large-col {
+  width: 140px;
+}
+
+.auto-column {
+  background: #f8fafc;
 }
 
 thead {
