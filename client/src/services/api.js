@@ -56,8 +56,20 @@ export async function updateOrderStatus(id, etat_commande) {
   return response.data.order;
 }
 
+export async function updateOrder(id, updates) {
+  console.log('PATCH /api/orders/' + id, updates);
+  const response = await api.patch(`/api/orders/${id}`, updates);
+  console.log('PATCH response', response.data);
+  return response.data.order;
+}
+
 export async function deleteOrder(id) {
   const response = await api.delete(`/api/orders/${id}`);
+  return response.data;
+}
+
+export async function bulkDeleteOrders(ids) {
+  const response = await api.post('/api/orders/bulk-delete', { ids });
   return response.data;
 }
 
@@ -66,5 +78,10 @@ export async function exportOrders(params) {
     params,
     responseType: 'blob',
   });
+  return response.data;
+}
+
+export async function exportSelectedOrders(ids) {
+  const response = await api.post('/api/orders/export-selected', { ids }, { responseType: 'blob' });
   return response.data;
 }

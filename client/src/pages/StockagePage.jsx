@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   getStockageRows,
   createStockageRow,
@@ -75,48 +75,47 @@ function StockagePage() {
   };
 
   const rowsWithTotals = useMemo(() => rows.map(computeRowTotals), [rows]);
-  const saveTimersRef = useRef({});
-  const [saveDelay, setSaveDelay] = useState(600);
 
   const handleRowChange = (rowIndex, field, value) => {
-    // Optimistically update the UI and mark row as saving if it has an id
     setRows((currentRows) =>
       currentRows.map((row, index) =>
-        index === rowIndex ? { ...row, [field]: value, saving: row.id ? true : row.saving, saveError: null } : row
+        index === rowIndex
+          ? { ...row, [field]: value, dirty: row.id ? true : row.dirty, saving: false, saveError: null, savedAt: null }
+          : row
       )
     );
+  };
 
-    const currentRow = rows[rowIndex];
-    // If there is no DB id yet, do nothing (new rows are created via Add button)
-    if (!currentRow || !currentRow.id) return;
+  const handleSaveRow = async (rowIndex) => {
+    const rowToSave = rows[rowIndex];
+    if (!rowToSave || !rowToSave.id) return;
 
-    const updatedRow = { ...currentRow, [field]: value };
+    setRows((currentRows) =>
+      currentRows.map((row, index) => (index === rowIndex ? { ...row, saving: true, saveError: null } : row))
+    );
 
-    // Debounce save per row id using current saveDelay
-    const timerKey = String(currentRow.id);
-    if (saveTimersRef.current[timerKey]) {
-      clearTimeout(saveTimersRef.current[timerKey]);
+    try {
+      const saved = await updateStockageRow(rowToSave.id, rowToSave);
+      setRows((currentRows) =>
+        currentRows.map((row, index) =>
+          index === rowIndex
+            ? { ...row, ...saved, saving: false, dirty: false, saveError: null, savedAt: Date.now() }
+            : row
+        )
+      );
+      setTimeout(() => {
+        setRows((currentRows) =>
+          currentRows.map((row, index) => (index === rowIndex ? { ...row, savedAt: null } : row))
+        );
+      }, 3000);
+    } catch (err) {
+      console.error('Unable to save stockage row', err);
+      setRows((currentRows) =>
+        currentRows.map((row, index) =>
+          index === rowIndex ? { ...row, saving: false, saveError: 'Save failed' } : row
+        )
+      );
     }
-    saveTimersRef.current[timerKey] = setTimeout(async () => {
-      try {
-        const saved = await updateStockageRow(currentRow.id, updatedRow);
-        // mark saved
-        setRows((currentRows) =>
-          currentRows.map((r) => (r.id === currentRow.id ? { ...r, ...saved, saving: false, saveError: null, savedAt: Date.now() } : r))
-        );
-        // clear savedAt after a short interval
-        setTimeout(() => {
-          setRows((currentRows) => currentRows.map((r) => (r.id === currentRow.id ? { ...r, savedAt: null } : r)));
-        }, 3000);
-      } catch (err) {
-        console.error('Unable to save stockage row update', err);
-        setRows((currentRows) =>
-          currentRows.map((r) => (r.id === currentRow.id ? { ...r, saving: false, saveError: 'Save failed' } : r))
-        );
-      } finally {
-        delete saveTimersRef.current[timerKey];
-      }
-    }, saveDelay);
   };
 
   const handleAddRow = async () => {
@@ -162,9 +161,8 @@ function StockagePage() {
         rows={rowsWithTotals}
         onRowChange={handleRowChange}
         onDeleteRow={handleDeleteRow}
+        onSaveRow={handleSaveRow}
         onAddRow={handleAddRow}
-        saveDelay={saveDelay}
-        onSaveDelayChange={setSaveDelay}
         onClearAll={handleClearAll}
       />
     </div>

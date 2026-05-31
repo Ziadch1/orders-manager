@@ -5,6 +5,17 @@ function normalizeHeader(header) {
   return String(header || '').trim();
 }
 
+function normalizeImportKey(key) {
+  const normalized = String(key || '').trim().toLowerCase();
+  if (['date de commande', 'date_commande', 'date commande', 'date', 'datecommande'].includes(normalized)) {
+    return 'date_commande';
+  }
+  if (['commentaire', 'comment', 'notes', 'note'].includes(normalized)) {
+    return 'commentaire';
+  }
+  return normalizeHeader(key);
+}
+
 function parseExcelFile(filePath) {
   const workbook = xlsx.readFile(filePath, { cellDates: true });
   const worksheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -12,7 +23,8 @@ function parseExcelFile(filePath) {
   const rows = rawRows.map((row) => {
     const normalized = {};
     Object.keys(row).forEach((key) => {
-      normalized[normalizeHeader(key)] = row[key];
+      const normalizedKey = normalizeImportKey(key);
+      normalized[normalizedKey] = row[key];
     });
     return normalized;
   });
@@ -30,6 +42,8 @@ function buildExcelBuffer(records) {
       imported_at: record.imported_at,
       updated_at: record.updated_at,
       ...record.data,
+      date_commande: record.date_commande || record.data?.date_commande || '',
+      commentaire: record.commentaire || record.data?.commentaire || '',
     };
   });
   const worksheet = xlsx.utils.json_to_sheet(rows);

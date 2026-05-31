@@ -19,7 +19,7 @@ function ImportExportSection({ onImport, onExport, importing, loadingExport }) {
             />
           </label>
           <button className="button" onClick={onExport} disabled={loadingExport}>
-            {loadingExport ? 'Exporting...' : 'Export Excel'}
+            {loadingExport ? 'Exporting...' : 'Export All'}
           </button>
         </div>
       </div>

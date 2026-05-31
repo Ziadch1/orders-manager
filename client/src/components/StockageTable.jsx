@@ -1,4 +1,4 @@
-function StockageTable({ rows, onRowChange, onDeleteRow, onAddRow, saveDelay, onSaveDelayChange, onClearAll }) {
+function StockageTable({ rows, onRowChange, onDeleteRow, onSaveRow, onAddRow, onClearAll }) {
   const columns = [
     { key: 'idProduit', label: 'ID Produit', editable: true, type: 'text', widthClass: 'medium-col' },
     { key: 'produit', label: 'Produit', editable: true, type: 'text', widthClass: 'large-col' },
@@ -36,18 +36,10 @@ function StockageTable({ rows, onRowChange, onDeleteRow, onAddRow, saveDelay, on
         <div>
           <h2 style={{ marginTop: 0 }}>Stockage</h2>
           <p className="muted" style={{ margin: '8px 0 0' }}>
-            Add products and track stock, costs, profit, and remaining stock automatically.
+            Add products and track stock, costs, profit, and remaining stock manually.
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <label style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <span className="muted" style={{ fontSize: '0.85rem' }}>Auto-save delay</span>
-            <select value={saveDelay} onChange={(e) => onSaveDelayChange(Number(e.target.value))}>
-              <option value={300}>300ms</option>
-              <option value={600}>600ms</option>
-              <option value={1000}>1000ms</option>
-            </select>
-          </label>
           <button className="button" type="button" onClick={onAddRow}>
             Add Product
           </button>
@@ -105,11 +97,21 @@ function StockageTable({ rows, onRowChange, onDeleteRow, onAddRow, saveDelay, on
                       <button className="button-danger" type="button" onClick={() => onDeleteRow(rowIndex)}>
                         Delete
                       </button>
+                      <button
+                        className="button-secondary"
+                        type="button"
+                        onClick={() => onSaveRow(rowIndex)}
+                        disabled={row.saving || (!row.dirty && !row.saveError)}
+                      >
+                        {row.saving ? 'Saving...' : 'Save'}
+                      </button>
                       <div className="save-status">
-                        {row.saving ? (
-                          <span style={{ color: '#2563eb' }}>Saving...</span>
-                        ) : row.saveError ? (
+                        {row.saveError ? (
                           <span style={{ color: '#dc2626' }}>Save error</span>
+                        ) : row.saving ? (
+                          <span style={{ color: '#2563eb' }}>Saving...</span>
+                        ) : row.dirty ? (
+                          <span style={{ color: '#f59e0b' }}>Unsaved</span>
                         ) : row.savedAt ? (
                           <span style={{ color: '#16a34a' }}>Saved</span>
                         ) : null}

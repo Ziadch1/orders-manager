@@ -99,6 +99,7 @@ button {
 
 .card {
   background: white;
+  border: 1px solid #e5e7eb;
   border-radius: 18px;
   padding: 20px;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
@@ -190,6 +191,14 @@ table {
   width: 100%;
   border-collapse: collapse;
   min-width: 900px;
+  border: 1px solid #d1d5db;
+  font-size: 0.95rem;
+}
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .stockage-table {
@@ -197,6 +206,7 @@ table {
   min-width: 1300px;
   table-layout: fixed;
   border-collapse: collapse;
+  border: 1px solid #d1d5db;
 }
 
 .stockage-table thead th {
@@ -209,20 +219,43 @@ table {
 }
 
 .stockage-table td,
-.stockage-table th {
+.stockage-table th,
+.orders-table td,
+.orders-table th {
   min-width: 80px;
 }
 
-.stockage-table td {
+.stockage-table td,
+.orders-table td {
   padding: 8px 6px;
 }
 
-.stockage-table input {
+.stockage-table input,
+.orders-table input,
+.comment-input {
   width: 100%;
   min-width: 0;
-  height: 32px;
+  height: 30px;
   padding: 6px 8px;
   font-size: 13px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+
+.orders-table th,
+.orders-table td {
+  padding: 8px 8px;
+}
+
+.actions-column {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.small-button {
+  padding: 6px 10px;
+  font-size: 0.8rem;
   border-radius: 10px;
 }
 
@@ -264,7 +297,7 @@ th,
 td {
   padding: 14px 12px;
   text-align: left;
-  border-bottom: 1px solid #e5e7eb;
+  border: 1px solid #d1d5db;
 }
 
 th {
@@ -304,6 +337,11 @@ tbody tr:hover {
 .badge.cancelled {
   background: #fee2e2;
   color: #991b1b;
+}
+
+.badge.retour {
+  background: #fde68a;
+  color: #92400e;
 }
 
 .select-status {

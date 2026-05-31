@@ -4,6 +4,7 @@ const {
   createStockageRow,
   updateStockageRow,
   deleteStockageRow,
+  clearStockage,
 } = require('../controllers/stockageController');
 
 const router = express.Router();

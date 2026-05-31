@@ -97,6 +97,23 @@ async function updateStatus(req, res, next) {
   }
 }
 
+async function updateOrder(req, res, next) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const updates = req.body;
+    console.log('PATCH /api/orders/' + id, updates);
+    const updated = await orderQueries.updateOrder(id, updates);
+    console.log('DB update result for order', id, updated);
+    if (!updated) {
+      return res.status(404).json({ error: 'Order not found.' });
+    }
+    res.json({ order: updated });
+  } catch (error) {
+    console.error('Error updating order', error);
+    next(error);
+  }
+}
+
 async function deleteOrder(req, res, next) {
   try {
     const id = parseInt(req.params.id, 10);
@@ -133,11 +150,49 @@ async function getStats(req, res, next) {
   }
 }
 
+async function bulkDeleteOrders(req, res, next) {
+  try {
+    const ids = req.body?.ids;
+    console.log('bulk-delete received ids:', ids, 'dbFile:', process.env.SQLITE_FILE || path.join(__dirname, '..', 'orders.sqlite'));
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'ids must be a non-empty array.' });
+    }
+    const numericIds = ids.map((id) => Number(id)).filter((id) => !Number.isNaN(id));
+    if (numericIds.length === 0) {
+      return res.status(400).json({ error: 'ids must contain valid numeric values.' });
+    }
+    const result = await orderQueries.bulkDeleteOrders(numericIds);
+    console.log('bulk-delete deleted count:', result.changes || 0);
+    res.json({ success: true, deletedCount: result.changes || 0 });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function exportSelectedOrders(req, res, next) {
+  try {
+    const ids = req.body?.ids;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'ids must be a non-empty array.' });
+    }
+    const orders = await orderQueries.getOrdersByIds(ids);
+    const buffer = buildExcelBuffer(orders);
+    res.setHeader('Content-Disposition', 'attachment; filename=orders-selected-export.xlsx');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   importOrders,
   getOrders,
   updateStatus,
+  updateOrder,
   deleteOrder,
   exportOrders,
+  exportSelectedOrders,
+  bulkDeleteOrders,
   getStats,
 };

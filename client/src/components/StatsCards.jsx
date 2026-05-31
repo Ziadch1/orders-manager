@@ -27,6 +27,12 @@ function StatsCards({ stats }) {
       </div>
       <div className="card stats-card">
         <div>
+          <strong>{stats.retour ?? 0}</strong>
+          <span>Retour</span>
+        </div>
+      </div>
+      <div className="card stats-card">
+        <div>
           <strong>{stats.pending ?? 0}</strong>
           <span>Pending</span>
         </div>
