@@ -1,5 +1,3 @@
-const fs = require('fs');
-const path = require('path');
 const { parseExcelFile, buildExcelBuffer, buildDedupeKey } = require('../utils/excel');
 const orderQueries = require('../models/orderQueries');
 
@@ -8,7 +6,7 @@ async function importOrders(req, res, next) {
     if (!req.file) {
       return res.status(400).json({ error: 'Excel file is required.' });
     }
-    const rows = parseExcelFile(req.file.path);
+    const rows = parseExcelFile(req.file.buffer || req.file.path);
     if (!rows.length) {
       return res.status(400).json({ error: 'No rows found in the Excel file.' });
     }
@@ -39,10 +37,6 @@ async function importOrders(req, res, next) {
     });
   } catch (error) {
     next(error);
-  } finally {
-    if (req.file && req.file.path) {
-      fs.unlink(req.file.path, () => {});
-    }
   }
 }
 
