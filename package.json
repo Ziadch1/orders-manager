@@ -6,7 +6,6 @@
     "server"
   ],
   "scripts": {
-    "build": "cd client && npm install && npm run build",
-    "vercel-build": "npm run build"
+    "vercel-build": "echo Vercel builds client through vercel.json"
   }
 }
