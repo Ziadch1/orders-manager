@@ -72,6 +72,9 @@ if (useTurso) {
     console.error('Failed to initialize Turso database:', err);
     process.exit(1);
   });
+} else if (process.env.NODE_ENV === 'production') {
+  console.error('Turso environment variables are required in production. Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN.');
+  process.exit(1);
 } else {
   const sqlite3 = require('sqlite3').verbose();
   const dbFile = process.env.SQLITE_FILE || path.join(__dirname, 'orders.sqlite');

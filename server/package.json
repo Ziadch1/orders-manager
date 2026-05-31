@@ -2,10 +2,10 @@
   "name": "orders-backend",
   "version": "1.0.0",
   "description": "Backend API for store order management with Excel import/export",
-  "main": "server.js",
+  "main": "server/server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node server/server.js",
+    "dev": "nodemon server/server.js"
   },
   "dependencies": {
     "@libsql/client": "^0.17.3",
