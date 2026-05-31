@@ -1,8 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const ordersRoutes = require('./routes/orders');
-const stockageRoutes = require('./routes/stockage');
 const errorHandler = require('./middlewares/errorHandler');
 
 dotenv.config();
@@ -19,12 +17,32 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/api/orders', ordersRoutes);
-app.use('/api/stockage', stockageRoutes);
-
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
+
+let ordersRoutes = null;
+let stockageRoutes = null;
+
+try {
+  ordersRoutes = require('./routes/orders');
+} catch (err) {
+  console.error('Unable to load orders routes:', err);
+}
+
+try {
+  stockageRoutes = require('./routes/stockage');
+} catch (err) {
+  console.error('Unable to load stockage routes:', err);
+}
+
+if (ordersRoutes) {
+  app.use('/api/orders', ordersRoutes);
+}
+
+if (stockageRoutes) {
+  app.use('/api/stockage', stockageRoutes);
+}
 
 app.use(errorHandler);
 

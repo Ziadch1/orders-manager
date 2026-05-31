@@ -1,8 +1,9 @@
 function errorHandler(err, req, res, next) {
-  console.error(err);
+  console.error('API error:', err);
   const status = err.status || 500;
   res.status(status).json({
-    error: err.message || 'Internal Server Error',
+    error: 'Internal Server Error',
+    message: err.message || 'Unexpected error',
   });
 }
 

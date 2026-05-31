@@ -5,8 +5,8 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const useTurso = Boolean(process.env.TURSO_DATABASE_URL);
-let pool;
-let dbType = 'sqlite';
+let pool = null;
+let dbType = 'none';
 let dbReady = Promise.resolve();
 
 function normalizeResult(result) {
@@ -68,13 +68,17 @@ async function initializeTurso() {
 }
 
 if (useTurso) {
+  dbType = 'turso';
   dbReady = initializeTurso().catch((err) => {
     console.error('Failed to initialize Turso database:', err);
-    process.exit(1);
+    pool = null;
+    dbType = 'none';
   });
 } else if (process.env.NODE_ENV === 'production') {
   console.error('Turso environment variables are required in production. Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN.');
-  process.exit(1);
+  pool = null;
+  dbType = 'none';
+  dbReady = Promise.resolve();
 } else {
   const sqlite3 = require('sqlite3').verbose();
   const dbFile = process.env.SQLITE_FILE || path.join(__dirname, 'orders.sqlite');
@@ -86,11 +90,14 @@ if (useTurso) {
   pool = new sqlite3.Database(dbFile, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
     if (err) {
       console.error('Failed to open SQLite database:', err.message);
-      process.exit(1);
+      pool = null;
+      dbType = 'none';
     }
   });
 
-  const initSql = `
+  if (pool) {
+    dbType = 'sqlite';
+    const initSql = `
 CREATE TABLE IF NOT EXISTS orders (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   data TEXT NOT NULL,
@@ -123,19 +130,25 @@ CREATE INDEX IF NOT EXISTS idx_orders_imported_at ON orders(imported_at);
 CREATE INDEX IF NOT EXISTS idx_orders_etat_commande ON orders(etat_commande);
 `;
 
-  dbReady = new Promise((resolve, reject) => {
-    pool.exec(initSql, (err) => {
-      if (err) {
-        console.error('Failed to initialize SQLite schema:', err.message);
-        return reject(err);
-      }
-      resolve();
+    dbReady = new Promise((resolve, reject) => {
+      pool.exec(initSql, (err) => {
+        if (err) {
+          console.error('Failed to initialize SQLite schema:', err.message);
+          pool = null;
+          dbType = 'none';
+          return resolve();
+        }
+        resolve();
+      });
     });
-  });
+  }
 }
 
 async function run(sql, params = []) {
   await dbReady;
+  if (!pool || dbType === 'none') {
+    throw new Error('Database unavailable.');
+  }
   if (dbType === 'sqlite') {
     return new Promise((resolve, reject) => {
       pool.run(sql, params, function (err) {
@@ -153,6 +166,9 @@ async function run(sql, params = []) {
 
 async function all(sql, params = []) {
   await dbReady;
+  if (!pool || dbType === 'none') {
+    throw new Error('Database unavailable.');
+  }
   if (dbType === 'sqlite') {
     return new Promise((resolve, reject) => {
       pool.all(sql, params, (err, rows) => {
@@ -170,6 +186,9 @@ async function all(sql, params = []) {
 
 async function get(sql, params = []) {
   await dbReady;
+  if (!pool || dbType === 'none') {
+    throw new Error('Database unavailable.');
+  }
   if (dbType === 'sqlite') {
     return new Promise((resolve, reject) => {
       pool.get(sql, params, (err, row) => {
