@@ -1,5 +1,4 @@
 const xlsx = require('xlsx');
-const path = require('path');
 
 function normalizeHeader(header) {
   return String(header || '').trim();
@@ -16,8 +15,11 @@ function normalizeImportKey(key) {
   return normalizeHeader(key);
 }
 
-function parseExcelFile(filePath) {
-  const workbook = xlsx.readFile(filePath, { cellDates: true });
+function parseExcelFile(fileOrBuffer) {
+  const workbook = Buffer.isBuffer(fileOrBuffer)
+    ? xlsx.read(fileOrBuffer, { type: 'buffer', cellDates: true })
+    : xlsx.readFile(fileOrBuffer, { cellDates: true });
+
   const worksheet = workbook.Sheets[workbook.SheetNames[0]];
   const rawRows = xlsx.utils.sheet_to_json(worksheet, { defval: '' });
   const rows = rawRows.map((row) => {
