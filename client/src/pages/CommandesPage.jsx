@@ -79,10 +79,10 @@ function CommandesPage() {
     setError('');
     try {
       const data = await getOrders(filter);
-      setOrders(data.orders || []);
-      setTotal(data.total || 0);
+      setOrders(data.orders);
+      setTotal(data.total);
     } catch (err) {
-      console.error(err);
+      console.error('Failed to load orders:', err);
       setError('Failed to load orders.');
     } finally {
       setLoading(false);
