@@ -7,11 +7,54 @@ const api = axios.create({
   },
 });
 
-const normalizeRows = (data) => {
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data?.rows)) return data.rows;
-  return [];
+const normalizeOrdersResponse = (data) => {
+  if (Array.isArray(data)) {
+    return {
+      orders: data,
+      total: data.length,
+      page: 1,
+      limit: data.length || 10,
+    };
+  }
+
+  if (Array.isArray(data?.orders)) {
+    return {
+      orders: data.orders,
+      total: Number(data.total ?? data.orders.length),
+      page: Number(data.page ?? 1),
+      limit: Number(data.limit ?? 10),
+    };
+  }
+
+  if (Array.isArray(data?.rows)) {
+    return {
+      orders: data.rows,
+      total: Number(data.total ?? data.rows.length),
+      page: Number(data.page ?? 1),
+      limit: Number(data.limit ?? 10),
+    };
+  }
+
+  return {
+    orders: [],
+    total: 0,
+    page: 1,
+    limit: 10,
+  };
 };
+
+const normalizeOrder = (order) => ({
+  ...order,
+  orderId: order.orderId ?? order.order_id ?? '',
+  fullName: order.fullName ?? order.full_name ?? '',
+  phone: order.phone ?? '',
+  city: order.city ?? '',
+  productName: order.productName ?? order.product_name ?? '',
+  variantPrice: order.variantPrice ?? order.variant_price ?? 0,
+  dateCommande: order.dateCommande ?? order.date_commande ?? '',
+  commentaire: order.commentaire ?? '',
+  etatCommande: order.etatCommande ?? order.etat_commande ?? 'En attente',
+});
 
 export async function importExcel(file) {
   const formData = new FormData();
@@ -25,9 +68,12 @@ export async function importExcel(file) {
 export async function getOrders(params) {
   const response = await api.get('/orders', { params });
   const data = response.data;
+  const normalized = normalizeOrdersResponse(data);
   return {
-    orders: normalizeRows(data),
-    total: typeof data.total === 'number' ? data.total : data.total || 0,
+    orders: normalized.orders.map(normalizeOrder),
+    total: normalized.total,
+    page: normalized.page,
+    limit: normalized.limit,
     raw: data,
   };
 }
