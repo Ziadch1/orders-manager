@@ -13,6 +13,7 @@ router.get('/', getStockageRows);
 router.post('/', createStockageRow);
 router.delete('/', clearStockage);
 router.put('/:id', updateStockageRow);
+router.patch('/:id', updateStockageRow);
 router.delete('/:id', deleteStockageRow);
 
 module.exports = router;
