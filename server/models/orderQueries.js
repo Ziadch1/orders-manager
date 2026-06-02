@@ -25,6 +25,7 @@ function normalizeOrderData(data) {
     variant_price: getField(data, ['variant_price', 'Variant price', 'price', 'prix']),
     date_commande: getField(data, ['date_commande', 'Date de commande', 'date commande', 'date', 'Date']),
     commentaire: getField(data, ['commentaire', 'Commentaire', 'comment', 'Comment']),
+    notes: getField(data, ['notes', 'Notes', 'note', 'Note', 'Remarque', 'remarque', 'Commentaires internes', 'ملاحظات']),
   };
 }
 
@@ -80,11 +81,13 @@ function parseOrder(row) {
   const normalizedData = normalizeOrderData(baseData);
   const dateCommande = row.date_commande || normalizedData.date_commande || baseData.date_commande || baseData.date || '';
   const commentaire = row.commentaire || normalizedData.commentaire || baseData.commentaire || '';
+  const notes = row.notes || normalizedData.notes || baseData.notes || '';
   const data = {
     ...baseData,
     ...normalizedData,
     date_commande: dateCommande,
     commentaire,
+    notes,
   };
   return {
     id: row.id,
@@ -94,6 +97,7 @@ function parseOrder(row) {
     updated_at: row.updated_at,
     date_commande: dateCommande,
     commentaire,
+    notes,
     order_id: normalizedData.order_id,
     full_name: normalizedData.full_name,
     phone: normalizedData.phone,
@@ -121,14 +125,15 @@ async function insertOrder(row, dedupeKey) {
   };
   const dateCommande = normalizedData.date_commande || row.date_commande || row['Date de commande'] || row['date de commande'] || row['date'] || row['Date'] || null;
   const commentaire = normalizedData.commentaire || row.commentaire || row.Commentaire || row.comment || row.Comment || '';
+  const notes = normalizedData.notes || row.notes || row.Notes || row.note || row.Note || row.Remarque || row.remarque || row['Commentaires internes'] || row['ملاحظات'] || '';
   const query = `
-    INSERT INTO orders (data, etat_commande, date_commande, commentaire, imported_at, updated_at, dedupe_key)
-    VALUES (?, ?, ?, ?, datetime('now'), datetime('now'), ?)
+    INSERT INTO orders (data, etat_commande, date_commande, commentaire, notes, imported_at, updated_at, dedupe_key)
+    VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'), ?)
   `;
-  const values = [JSON.stringify(storedData), 'En attente', dateCommande, commentaire, dedupeKey];
+  const values = [JSON.stringify(storedData), 'En attente', dateCommande, commentaire, notes, dedupeKey];
   const result = await pool.run(query, values);
   const inserted = await pool.get(
-    'SELECT id, data, etat_commande, date_commande, commentaire, imported_at, updated_at FROM orders WHERE id = ?',
+    'SELECT id, data, etat_commande, date_commande, commentaire, notes, imported_at, updated_at FROM orders WHERE id = ?',
     [result.lastID]
   );
   return parseOrder(inserted);
@@ -140,7 +145,7 @@ async function getOrders({ search, status, limit, offset, sortField, sortOrder }
   const statusClause = buildStatusClause(status, params);
   const orderClause = buildSortClause(sortField, sortOrder);
   const query = `
-    SELECT id, data, etat_commande, date_commande, commentaire, imported_at, updated_at
+    SELECT id, data, etat_commande, date_commande, commentaire, notes, imported_at, updated_at
     FROM orders
     WHERE 1=1
     ${searchClause.clause}
@@ -177,14 +182,14 @@ async function updateOrderStatus(id, etat_commande) {
   `;
   await pool.run(query, [etat_commande, id]);
   const updated = await pool.get(
-    'SELECT id, data, etat_commande, date_commande, commentaire, imported_at, updated_at FROM orders WHERE id = ?',
+    'SELECT id, data, etat_commande, date_commande, commentaire, notes, imported_at, updated_at FROM orders WHERE id = ?',
     [id]
   );
   return updated ? parseOrder(updated) : null;
 }
 
 async function updateOrder(id, updates) {
-  const existing = await pool.get('SELECT data, etat_commande, date_commande, commentaire FROM orders WHERE id = ?', [id]);
+  const existing = await pool.get('SELECT data, etat_commande, date_commande, commentaire, notes FROM orders WHERE id = ?', [id]);
   if (!existing) {
     return null;
   }
@@ -217,18 +222,19 @@ async function updateOrder(id, updates) {
 
   const dateCommande = updates.date_commande !== undefined ? updates.date_commande : existing.date_commande || updatedData.date_commande || '';
   const commentaire = updates.commentaire !== undefined ? updates.commentaire : existing.commentaire || updatedData.commentaire || '';
+  const notes = updates.notes !== undefined ? updates.notes : existing.notes || updatedData.notes || '';
   const etatCommande = updates.etat_commande !== undefined ? updates.etat_commande : existing.etat_commande;
 
   const query = `
     UPDATE orders
-    SET data = ?, etat_commande = ?, date_commande = ?, commentaire = ?, updated_at = datetime('now')
+    SET data = ?, etat_commande = ?, date_commande = ?, commentaire = ?, notes = ?, updated_at = datetime('now')
     WHERE id = ?
   `;
-  const values = [JSON.stringify(updatedData), etatCommande, dateCommande, commentaire, id];
+  const values = [JSON.stringify(updatedData), etatCommande, dateCommande, commentaire, notes, id];
 
   await pool.run(query, values);
   const updated = await pool.get(
-    'SELECT id, data, etat_commande, date_commande, commentaire, imported_at, updated_at FROM orders WHERE id = ?',
+    'SELECT id, data, etat_commande, date_commande, commentaire, notes, imported_at, updated_at FROM orders WHERE id = ?',
     [id]
   );
   return updated ? parseOrder(updated) : null;
@@ -244,7 +250,7 @@ async function getOrdersForExport({ search, status, sortField, sortOrder }) {
   const statusClause = buildStatusClause(status, params);
   const orderClause = buildSortClause(sortField, sortOrder);
   const query = `
-    SELECT id, data, etat_commande, date_commande, commentaire, imported_at, updated_at
+    SELECT id, data, etat_commande, date_commande, commentaire, notes, imported_at, updated_at
     FROM orders
     WHERE 1=1
     ${searchClause.clause}
@@ -261,7 +267,7 @@ async function getOrdersByIds(ids) {
   }
   const placeholders = ids.map(() => '?').join(',');
   const query = `
-    SELECT id, data, etat_commande, date_commande, commentaire, imported_at, updated_at
+    SELECT id, data, etat_commande, date_commande, commentaire, notes, imported_at, updated_at
     FROM orders
     WHERE id IN (${placeholders})
     ORDER BY id ASC

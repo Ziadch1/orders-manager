@@ -18,6 +18,7 @@ const columnLabels = {
   variant_price: 'Variant price',
   date_commande: 'Date de commande',
   commentaire: 'Commentaire',
+  notes: 'Notes',
 };
 
 function OrdersTable({
@@ -99,14 +100,14 @@ function OrdersTable({
                     const isEditing = editingRowId === order.id;
                     const value = isEditing ? editFormData[column] ?? '' : order[column] ?? order.data?.[column] ?? '';
                     if (isEditing && column !== 'etat_commande') {
-                      if (column === 'commentaire' || column === 'date_commande' || column === 'order_id' || column === 'full_name' || column === 'phone' || column === 'city' || column === 'product_name') {
+                      if (column === 'commentaire' || column === 'notes' || column === 'date_commande' || column === 'order_id' || column === 'full_name' || column === 'phone' || column === 'city' || column === 'product_name') {
                         return (
                           <td key={column}>
                             <input
                               type={column === 'variant_price' ? 'number' : 'text'}
                               value={value}
                               onChange={(event) => onOrderFieldChange(order.id, column, event.target.value)}
-                              placeholder={column === 'commentaire' ? 'Commentaire' : undefined}
+                              placeholder={column === 'commentaire' ? 'Commentaire' : column === 'notes' ? 'Notes' : undefined}
                               className="comment-input"
                             />
                           </td>
@@ -127,7 +128,7 @@ function OrdersTable({
                         );
                       }
                     }
-                    if (column === 'commentaire' || column === 'date_commande') {
+                    if (column === 'commentaire' || column === 'notes' || column === 'date_commande') {
                       return <td key={column}>{String(value)}</td>;
                     }
                     if (column === 'variant_price' && !isEditing) {

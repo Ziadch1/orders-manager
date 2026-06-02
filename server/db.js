@@ -37,6 +37,7 @@ async function initializeTurso() {
       etat_commande TEXT NOT NULL DEFAULT 'En attente',
       date_commande TEXT,
       commentaire TEXT DEFAULT '',
+      notes TEXT DEFAULT '',
       imported_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
       dedupe_key TEXT UNIQUE
@@ -62,8 +63,30 @@ async function initializeTurso() {
   ];
 
   for (const sql of initStatements) {
-    await pool.execute({ sql, args: [] });
+    try {
+      await pool.execute({ sql, args: [] });
+    } catch (err) {
+      if (err.message && err.message.includes('already exists')) {
+        console.log('Table already exists:', err.message);
+      } else {
+        throw err;
+      }
+    }
   }
+
+  // Safely add notes column if it doesn't exist
+  try {
+    await pool.execute({
+      sql: `ALTER TABLE orders ADD COLUMN notes TEXT DEFAULT '';`,
+      args: [],
+    });
+    console.log('Added notes column to orders table.');
+  } catch (err) {
+    if (!err.message || !err.message.includes('already exists')) {
+      console.log('Notes column migration:', err.message);
+    }
+  }
+
   console.log('Turso database initialized.');
 }
 
@@ -104,6 +127,7 @@ CREATE TABLE IF NOT EXISTS orders (
   etat_commande TEXT NOT NULL DEFAULT 'En attente',
   date_commande TEXT,
   commentaire TEXT DEFAULT '',
+  notes TEXT DEFAULT '',
   imported_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   dedupe_key TEXT UNIQUE
@@ -138,7 +162,19 @@ CREATE INDEX IF NOT EXISTS idx_orders_etat_commande ON orders(etat_commande);
           dbType = 'none';
           return resolve();
         }
-        resolve();
+
+        // Safely add notes column if it doesn't exist
+        pool.run(
+          `ALTER TABLE orders ADD COLUMN notes TEXT DEFAULT '';`,
+          (err2) => {
+            if (err2 && !err2.message.includes('duplicate column')) {
+              console.log('Notes column already exists or migration skipped:', err2.message);
+            } else if (!err2) {
+              console.log('Added notes column to orders table.');
+            }
+            resolve();
+          }
+        );
       });
     });
   }

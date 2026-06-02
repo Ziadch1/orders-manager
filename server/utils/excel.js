@@ -9,7 +9,7 @@ function normalizeImportKey(key) {
   if (['date de commande', 'date_commande', 'date commande', 'date', 'datecommande'].includes(normalized)) {
     return 'date_commande';
   }
-  if (['commentaire', 'comment', 'notes', 'note'].includes(normalized)) {
+  if (['commentaire', 'comment', 'notes', 'note', 'remarque', 'commentaires internes', 'ملاحظات'].includes(normalized)) {
     return 'commentaire';
   }
   return normalizeHeader(key);
@@ -46,6 +46,7 @@ function buildExcelBuffer(records) {
       ...record.data,
       date_commande: record.date_commande || record.data?.date_commande || '',
       commentaire: record.commentaire || record.data?.commentaire || '',
+      notes: record.notes || record.data?.notes || '',
     };
   });
   const worksheet = xlsx.utils.json_to_sheet(rows);
