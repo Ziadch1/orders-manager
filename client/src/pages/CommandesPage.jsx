@@ -255,6 +255,11 @@ function CommandesPage() {
         return;
       }
 
+      const confirmed = window.confirm(
+        `Are you sure you want to delete ${ids.length} selected order(s)?`
+      );
+      if (!confirmed) return;
+
       console.log('Selected IDs:', selectedOrderIds);
       console.log('Orders:', orders);
       console.log('Deleting selected IDs:', ids);
@@ -268,9 +273,21 @@ function CommandesPage() {
         return;
       }
 
+      // Remove rows immediately from UI
+      setOrders((prevOrders) => prevOrders.filter((order) => !ids.includes(Number(order.id))));
+
+      // If current page becomes empty after deletion and there are previous pages, go back one page
+      const remainingOnPage = orders.filter((order) => !ids.includes(Number(order.id))).length;
+      if (remainingOnPage === 0 && filter.page > 1) {
+        setFilter((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }));
+      }
+
+      // Clear selection immediately
       setSelectedOrderIds([]);
+
       setMessage(`Deleted ${response.deleted} selected row(s).`);
 
+      // Sync data
       await loadOrders();
       await loadStats();
     } catch (error) {
