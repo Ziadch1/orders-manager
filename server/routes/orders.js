@@ -9,9 +9,9 @@ router.get('/stats', getStats);
 router.get('/', getOrders);
 router.patch('/:id/status', updateStatus);
 router.patch('/:id', updateOrder);
+// bulk delete must be defined before the parameterized single-delete route
+router.delete('/bulk', bulkDeleteOrders);
 router.delete('/:id', deleteOrder);
-router.post('/bulk-delete', bulkDeleteOrders);
-router.delete('/bulk-delete', bulkDeleteOrders);
 router.get('/export', exportOrders);
 router.post('/export-selected', exportSelectedOrders);
 

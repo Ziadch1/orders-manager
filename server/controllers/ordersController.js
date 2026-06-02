@@ -146,18 +146,16 @@ async function getStats(req, res, next) {
 
 async function bulkDeleteOrders(req, res, next) {
   try {
-    const ids = req.body?.ids;
-    console.log('bulk-delete received ids:', ids, 'dbFile:', process.env.SQLITE_FILE || path.join(__dirname, '..', 'orders.sqlite'));
-    if (!Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ error: 'ids must be a non-empty array.' });
+    console.log('DELETE /orders/bulk body:', req.body);
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
+    const cleanIds = ids.map(Number).filter(Number.isFinite);
+    if (cleanIds.length === 0) {
+      return res.status(400).json({ error: 'No valid order IDs provided' });
     }
-    const numericIds = ids.map((id) => Number(id)).filter((id) => !Number.isNaN(id));
-    if (numericIds.length === 0) {
-      return res.status(400).json({ error: 'ids must contain valid numeric values.' });
-    }
-    const result = await orderQueries.bulkDeleteOrders(numericIds);
-    console.log('bulk-delete deleted count:', result.changes || 0);
-    res.json({ success: true, deletedCount: result.changes || 0 });
+    const result = await orderQueries.bulkDeleteOrders(cleanIds);
+    const deleted = result?.changes ?? 0;
+    console.log('bulk-delete deleted count:', deleted);
+    res.json({ success: true, deleted });
   } catch (error) {
     next(error);
   }

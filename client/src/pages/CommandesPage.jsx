@@ -241,21 +241,35 @@ function CommandesPage() {
 
   const handleDeleteSelected = async () => {
     if (selectedOrderIds.length === 0) {
-      setError('Please select at least one row to delete.');
+      setError('No rows selected.');
       return;
     }
     if (!window.confirm(`Delete ${selectedOrderIds.length} selected order(s)?`)) {
       return;
     }
+    console.log('Selected IDs:', selectedOrderIds);
     try {
+      console.log('Deleting selected orders:', selectedOrderIds);
       const result = await bulkDeleteOrders(selectedOrderIds);
-      if (!result || result.deletedCount === 0) {
+      const deleted = result?.deleted ?? result?.deletedCount ?? 0;
+      if (!result || deleted === 0) {
         setError('No selected rows were deleted.');
         return;
       }
-      setOrders((current) => current.filter((order) => !selectedOrderIds.includes(order.id)));
+      setOrders((current) => {
+        const remaining = current.filter((order) => !selectedOrderIds.includes(order.id));
+        return remaining;
+      });
+      // If current page becomes empty after deletion, go back one page
+      const remainingOnPage = orders.filter((order) => !selectedOrderIds.includes(order.id)).length;
+      if (remainingOnPage === 0 && filter.page > 1) {
+        setFilter((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }));
+        await loadOrders();
+      } else {
+        await loadOrders();
+      }
       setSelectedOrderIds([]);
-      setMessage(`${result.deletedCount} orders deleted successfully.`);
+      setMessage(`${deleted} orders deleted successfully.`);
       setTimeout(() => setMessage(''), 4000);
       await loadStats();
     } catch (err) {
