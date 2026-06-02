@@ -24,8 +24,8 @@ function normalizeOrderData(data) {
     product_name: getField(data, ['product_name', 'Product name', 'product', 'produit']),
     variant_price: getField(data, ['variant_price', 'Variant price', 'price', 'prix']),
     date_commande: getField(data, ['date_commande', 'Date de commande', 'date commande', 'date', 'Date']),
-    commentaire: getField(data, ['commentaire', 'Commentaire', 'comment', 'Comment']),
     notes: getField(data, ['notes', 'Notes', 'note', 'Note', 'Remarque', 'remarque', 'Commentaires internes', 'ملاحظات']),
+    commentaire: getField(data, ['commentaire', 'Commentaire', 'comment', 'Comment']),
   };
 }
 
@@ -125,7 +125,10 @@ async function insertOrder(row, dedupeKey) {
   };
   const dateCommande = normalizedData.date_commande || row.date_commande || row['Date de commande'] || row['date de commande'] || row['date'] || row['Date'] || null;
   const commentaire = normalizedData.commentaire || row.commentaire || row.Commentaire || row.comment || row.Comment || '';
-  const notes = normalizedData.notes || row.notes || row.Notes || row.note || row.Note || row.Remarque || row.remarque || row['Commentaires internes'] || row['ملاحظات'] || '';
+  let notes = normalizedData.notes || row.notes || row.Notes || row.note || row.Note || row.Remarque || row.remarque || row['Commentaires internes'] || row['ملاحظات'] || '';
+  if (!notes && commentaire) {
+    notes = commentaire;
+  }
   const query = `
     INSERT INTO orders (data, etat_commande, date_commande, commentaire, notes, imported_at, updated_at, dedupe_key)
     VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'), ?)

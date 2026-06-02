@@ -45,7 +45,6 @@ function buildExcelBuffer(records) {
       updated_at: record.updated_at,
       ...record.data,
       date_commande: record.date_commande || record.data?.date_commande || '',
-      commentaire: record.commentaire || record.data?.commentaire || '',
       notes: record.notes || record.data?.notes || '',
     };
   });

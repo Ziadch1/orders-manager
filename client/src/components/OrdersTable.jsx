@@ -17,7 +17,6 @@ const columnLabels = {
   product_name: 'Product name',
   variant_price: 'Variant price',
   date_commande: 'Date de commande',
-  commentaire: 'Commentaire',
   notes: 'Notes',
 };
 
@@ -100,7 +99,7 @@ function OrdersTable({
                     const isEditing = editingRowId === order.id;
                     const value = isEditing ? editFormData[column] ?? '' : order[column] ?? order.data?.[column] ?? '';
                     if (isEditing && column !== 'etat_commande') {
-                      if (column === 'commentaire' || column === 'notes' || column === 'date_commande' || column === 'order_id' || column === 'full_name' || column === 'phone' || column === 'city' || column === 'product_name') {
+                      if (column === 'notes' || column === 'date_commande' || column === 'order_id' || column === 'full_name' || column === 'phone' || column === 'city' || column === 'product_name') {
                         return (
                           <td key={column}>
                             <input
@@ -128,7 +127,7 @@ function OrdersTable({
                         );
                       }
                     }
-                    if (column === 'commentaire' || column === 'notes' || column === 'date_commande') {
+                    if (column === 'notes' || column === 'date_commande') {
                       return <td key={column}>{String(value)}</td>;
                     }
                     if (column === 'variant_price' && !isEditing) {

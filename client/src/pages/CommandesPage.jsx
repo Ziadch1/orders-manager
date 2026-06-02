@@ -62,7 +62,6 @@ function CommandesPage() {
     'product_name',
     'variant_price',
     'date_commande',
-    'commentaire',
     'notes',
   ];
 
@@ -174,7 +173,6 @@ function CommandesPage() {
       product_name: row.product_name || rowData.product_name || rowData['Product name'] || rowData.product || rowData.produit || '',
       variant_price: row.variant_price || rowData.variant_price || rowData['Variant price'] || rowData.price || rowData.prix || '',
       date_commande: row.date_commande || rowData.date_commande || rowData['Date de commande'] || rowData['date commande'] || rowData.date || rowData.Date || '',
-      commentaire: row.commentaire || rowData.commentaire || rowData.Commentaire || rowData.comment || rowData.Comment || '',
       notes: row.notes || rowData.notes || rowData.Notes || rowData.note || rowData.Note || '',
       etat_commande: row.etat_commande || 'En attente',
     });
@@ -204,7 +202,6 @@ function CommandesPage() {
         product_name: editFormData.product_name,
         variant_price: editFormData.variant_price,
         date_commande: editFormData.date_commande,
-        commentaire: editFormData.commentaire,
         notes: editFormData.notes,
         etat_commande: editFormData.etat_commande,
       });
