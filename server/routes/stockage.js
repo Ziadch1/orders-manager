@@ -1,6 +1,7 @@
 const express = require('express');
 const {
   getStockageRows,
+  getStockageSoldCounts,
   createStockageRow,
   updateStockageRow,
   deleteStockageRow,
@@ -10,6 +11,7 @@ const {
 const router = express.Router();
 
 router.get('/', getStockageRows);
+router.get('/sold-counts', getStockageSoldCounts);
 router.post('/', createStockageRow);
 router.delete('/', clearStockage);
 router.put('/:id', updateStockageRow);

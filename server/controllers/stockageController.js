@@ -1,9 +1,51 @@
 const stockageQueries = require('../models/stockageQueries');
+const orderQueries = require('../models/orderQueries');
+
+const normalizeProductName = (value = '') =>
+  String(value)
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^\p{L}\p{N}\s]/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const deliveredStatuses = new Set([
+  'livré',
+  'livre',
+  'delivered',
+  'confirmé livré',
+  'تم التوصيل',
+]);
 
 async function getStockageRows(req, res, next) {
   try {
     const rows = await stockageQueries.getStockageRows();
     res.json({ rows });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getStockageSoldCounts(req, res, next) {
+  try {
+    const orders = await orderQueries.getOrdersForExport({});
+    const counts = {};
+
+    orders.forEach((order) => {
+      const status = String(order.etat_commande || '').trim().toLowerCase();
+      if (!deliveredStatuses.has(status)) {
+        return;
+      }
+
+      const name = normalizeProductName(order.product_name || order.data?.product_name || order.data?.product || order.data?.produit || '');
+      if (!name) {
+        return;
+      }
+
+      counts[name] = (counts[name] || 0) + 1;
+    });
+
+    res.json({ counts });
   } catch (error) {
     next(error);
   }
@@ -54,6 +96,7 @@ async function clearStockage(req, res, next) {
 
 module.exports = {
   getStockageRows,
+  getStockageSoldCounts,
   createStockageRow,
   updateStockageRow,
   deleteStockageRow,

@@ -273,12 +273,17 @@ function CommandesPage() {
         return;
       }
 
+      // Compute remaining rows after delete (based on current orders)
+      const remainingAfter = orders.filter((order) => !ids.includes(Number(order.id)));
+
       // Remove rows immediately from UI
-      setOrders((prevOrders) => prevOrders.filter((order) => !ids.includes(Number(order.id))));
+      setOrders(remainingAfter);
+
+      // Update total immediately if stored
+      setTotal((prev) => Math.max(0, Number(prev) - Number(response.deleted)));
 
       // If current page becomes empty after deletion and there are previous pages, go back one page
-      const remainingOnPage = orders.filter((order) => !ids.includes(Number(order.id))).length;
-      if (remainingOnPage === 0 && filter.page > 1) {
+      if (remainingAfter.length === 0 && filter.page > 1) {
         setFilter((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }));
       }
 
@@ -287,9 +292,9 @@ function CommandesPage() {
 
       setMessage(`Deleted ${response.deleted} selected row(s).`);
 
-      // Sync data
-      await loadOrders();
+      // Sync data: update stats first then reload orders to ensure consistency
       await loadStats();
+      await loadOrders();
     } catch (error) {
       console.error('Delete selected failed:', error.response?.data || error);
 
