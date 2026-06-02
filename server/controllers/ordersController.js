@@ -148,14 +148,17 @@ async function bulkDeleteOrders(req, res, next) {
   try {
     console.log('DELETE /orders/bulk body:', req.body);
     const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
-    const cleanIds = ids.map(Number).filter(Number.isFinite);
+    const cleanIds = ids.map(Number).filter((n) => Number.isInteger(n) && n > 0);
     if (cleanIds.length === 0) {
-      return res.status(400).json({ error: 'No valid order IDs provided' });
+      return res.status(400).json({ success: false, error: 'No valid order IDs provided', received: req.body });
     }
     const result = await orderQueries.bulkDeleteOrders(cleanIds);
     const deleted = result?.changes ?? 0;
-    console.log('bulk-delete deleted count:', deleted);
-    res.json({ success: true, deleted });
+    // check which ids still exist
+    const remaining = await orderQueries.getOrdersByIds(cleanIds);
+    const stillExisting = (remaining || []).map((r) => r.id);
+    console.log('bulk-delete deleted count:', deleted, 'stillExisting:', stillExisting);
+    res.json({ success: true, deleted, ids: cleanIds, stillExisting });
   } catch (error) {
     next(error);
   }

@@ -176,7 +176,7 @@ export async function deleteOrder(id) {
 
 export async function bulkDeleteOrders(ids) {
   console.log('API: bulkDeleteOrders called with ids:', ids);
-  const response = await api.delete('/orders/bulk', { data: { ids } });
+  const response = await api.post('/orders/delete-selected', { ids });
   return response.data;
 }
 

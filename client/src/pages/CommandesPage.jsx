@@ -240,41 +240,47 @@ function CommandesPage() {
   };
 
   const handleDeleteSelected = async () => {
-    if (selectedOrderIds.length === 0) {
-      setError('No rows selected.');
-      return;
-    }
-    if (!window.confirm(`Delete ${selectedOrderIds.length} selected order(s)?`)) {
-      return;
-    }
-    console.log('Selected IDs:', selectedOrderIds);
     try {
-      console.log('Deleting selected orders:', selectedOrderIds);
-      const result = await bulkDeleteOrders(selectedOrderIds);
-      const deleted = result?.deleted ?? result?.deletedCount ?? 0;
-      if (!result || deleted === 0) {
+      if (!selectedOrderIds || selectedOrderIds.length === 0) {
+        setError('No rows selected.');
+        return;
+      }
+
+      const ids = selectedOrderIds
+        .map((id) => Number(id))
+        .filter((id) => Number.isInteger(id) && id > 0);
+
+      if (ids.length === 0) {
+        setError('No valid selected rows.');
+        return;
+      }
+
+      console.log('Selected IDs:', selectedOrderIds);
+      console.log('Orders:', orders);
+      console.log('Deleting selected IDs:', ids);
+
+      const response = await bulkDeleteOrders(ids);
+
+      console.log('Delete selected response:', response);
+
+      if (!response?.success || Number(response.deleted) === 0) {
         setError('No selected rows were deleted.');
         return;
       }
-      setOrders((current) => {
-        const remaining = current.filter((order) => !selectedOrderIds.includes(order.id));
-        return remaining;
-      });
-      // If current page becomes empty after deletion, go back one page
-      const remainingOnPage = orders.filter((order) => !selectedOrderIds.includes(order.id)).length;
-      if (remainingOnPage === 0 && filter.page > 1) {
-        setFilter((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }));
-        await loadOrders();
-      } else {
-        await loadOrders();
-      }
+
       setSelectedOrderIds([]);
-      setMessage(`${deleted} orders deleted successfully.`);
-      setTimeout(() => setMessage(''), 4000);
+      setMessage(`Deleted ${response.deleted} selected row(s).`);
+
+      await loadOrders();
       await loadStats();
-    } catch (err) {
-      console.error(err);
-      setError('Unable to delete selected orders.');
+    } catch (error) {
+      console.error('Delete selected failed:', error.response?.data || error);
+
+      setError(
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        'Failed to delete selected rows.'
+      );
     }
   };
 
